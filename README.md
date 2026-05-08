@@ -25,7 +25,9 @@
 
 ---
 
-# TradingAgents: Multi-Agents LLM Financial Trading Framework
+# TradingAgents: Multi-Agents LLM Financial Trading Framework (Futu OpenD Fork)
+
+> This fork adds **[Futu OpenD](https://openapi.futunn.com/futu-api-doc/opend/opend.html)** as a data source vendor, enabling US and HK market data via Futu's local gateway.
 
 ## News
 - [2026-04] **TradingAgents v0.2.4** released with structured-output agents (Research Manager, Trader, Portfolio Manager), LangGraph checkpoint resume, persistent decision log, DeepSeek/Qwen/GLM/Azure provider support, Docker, and a Windows UTF-8 encoding fix. See [CHANGELOG.md](CHANGELOG.md) for the full list.
@@ -104,7 +106,7 @@ Our framework decomposes complex trading tasks into specialized roles. This ensu
 
 Clone TradingAgents:
 ```bash
-git clone https://github.com/TauricResearch/TradingAgents.git
+git clone https://github.com/rogercwchenhk/TradingAgents.git
 cd TradingAgents
 ```
 
@@ -146,6 +148,9 @@ export DASHSCOPE_API_KEY=...       # Qwen (Alibaba DashScope)
 export ZHIPU_API_KEY=...           # GLM (Zhipu)
 export OPENROUTER_API_KEY=...      # OpenRouter
 export ALPHA_VANTAGE_API_KEY=...   # Alpha Vantage
+export FUTU_OPEND_HOST=127.0.0.1   # Futu OpenD host (default: 127.0.0.1)
+export FUTU_OPEND_PORT=11111       # Futu OpenD port (default: 11111)
+export FUTU_MARKET=US              # Futu market: US or HK
 ```
 
 For enterprise providers (e.g. Azure OpenAI, AWS Bedrock), copy `.env.enterprise.example` to `.env.enterprise` and fill in your credentials.
@@ -219,6 +224,43 @@ print(decision)
 ```
 
 See `tradingagents/default_config.py` for all configuration options.
+
+### Futu OpenD Data Vendor
+
+This fork adds **Futu OpenD** as a data source alongside yfinance and Alpha Vantage. To use it, install [Futu OpenD](https://openapi.futunn.com/futu-api-doc/opend/opend.html) locally, then configure:
+
+```python
+config = DEFAULT_CONFIG.copy()
+
+# Use Futu OpenD for all data categories
+config["data_vendors"] = {
+    "core_stock_apis": "futu_opend",
+    "technical_indicators": "futu_opend",
+    "fundamental_data": "futu_opend",
+    "news_data": "futu_opend",
+}
+
+config["futu_opend_host"] = "127.0.0.1"
+config["futu_opend_port"] = 11111
+config["futu_market"] = "US"  # or "HK"
+
+ta = TradingAgentsGraph(debug=True, config=config)
+_, decision = ta.propagate("AAPL", "2026-01-15")
+print(decision)
+```
+
+You can also mix vendors:
+
+```python
+config["data_vendors"] = {
+    "core_stock_apis": "futu_opend",
+    "technical_indicators": "futu_opend",
+    "fundamental_data": "yfinance",
+    "news_data": "alpha_vantage",
+}
+```
+
+See [FUTU_OPEND_README.md](FUTU_OPEND_README.md) for full documentation.
 
 ## Persistence and Recovery
 
