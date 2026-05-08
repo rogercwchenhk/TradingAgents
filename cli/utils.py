@@ -193,6 +193,9 @@ def _select_model(provider: str, mode: str) -> str:
             validate=lambda x: len(x.strip()) > 0 or "Please enter a deployment name.",
         ).ask().strip()
 
+    if provider.lower() == "custom":
+        return _prompt_custom_model_id()
+
     choice = questionary.select(
         f"Select Your [{mode.title()}-Thinking LLM Engine]:",
         choices=[
@@ -204,7 +207,7 @@ def _select_model(provider: str, mode: str) -> str:
             [
                 ("selected", "fg:magenta noinherit"),
                 ("highlighted", "fg:magenta noinherit"),
-                ("pointer", "fg:magenta noinherit"),
+                ("pointer", "noinherit"),
             ]
         ),
     ).ask()
@@ -242,6 +245,7 @@ def select_llm_provider() -> tuple[str, str | None]:
         ("OpenRouter", "openrouter", "https://openrouter.ai/api/v1"),
         ("Azure OpenAI", "azure", None),
         ("Ollama", "ollama", "http://localhost:11434/v1"),
+        ("Custom (OpenAI-Compatible)", "custom", None),
     ]
 
     choice = questionary.select(
@@ -255,7 +259,7 @@ def select_llm_provider() -> tuple[str, str | None]:
             [
                 ("selected", "fg:magenta noinherit"),
                 ("highlighted", "fg:magenta noinherit"),
-                ("pointer", "fg:magenta noinherit"),
+                ("pointer", "noinherit"),
             ]
         ),
     ).ask()
@@ -265,7 +269,75 @@ def select_llm_provider() -> tuple[str, str | None]:
         exit(1)
 
     provider, url = choice
+
+    if provider == "custom":
+        return _configure_custom_provider()
+
     return provider, url
+
+
+def _configure_custom_provider() -> tuple[str, str | None]:
+    """Configure a custom OpenAI-compatible provider interactively.
+
+    Prompts for base URL, API key (env var name or literal value), and
+    returns the provider tuple understood by the rest of the CLI.
+    """
+    console.print(
+        "\n[bold cyan]Custom OpenAI-Compatible Provider Configuration[/bold cyan]"
+    )
+    console.print(
+        "[dim]Enter details for any OpenAI-compatible API endpoint.[/dim]\n"
+    )
+
+    base_url = questionary.text(
+        "Enter the API base URL (e.g. http://localhost:8080/v1):",
+        validate=lambda x: len(x.strip()) > 0 or "Please enter a valid URL.",
+        style=questionary.Style([("text", "fg:green"), ("highlighted", "noinherit")]),
+    ).ask()
+
+    if not base_url:
+        console.print("\n[red]No base URL provided. Exiting...[/red]")
+        exit(1)
+
+    base_url = base_url.strip().rstrip("/")
+
+    api_key_method = questionary.select(
+        "How would you like to provide the API key?",
+        choices=[
+            questionary.Choice("Environment variable name", value="env"),
+            questionary.Choice("Enter directly", value="direct"),
+            questionary.Choice("No API key needed (e.g. local server)", value="none"),
+        ],
+        style=questionary.Style([
+            ("selected", "fg:cyan noinherit"),
+            ("highlighted", "fg:cyan noinherit"),
+            ("pointer", "noinherit"),
+        ]),
+    ).ask()
+
+    custom_api_key = ""
+    if api_key_method == "env":
+        env_name = questionary.text(
+            "Enter the environment variable name (e.g. MY_API_KEY):",
+            validate=lambda x: len(x.strip()) > 0 or "Please enter a variable name.",
+        ).ask()
+        if env_name:
+            import os
+            custom_api_key = os.environ.get(env_name.strip(), "")
+            if not custom_api_key:
+                console.print(
+                    f"[yellow]Warning: Environment variable '{env_name.strip()}' "
+                    f"is not set. You can set it before running.[/yellow]"
+                )
+    elif api_key_method == "direct":
+        custom_api_key = questionary.text(
+            "Enter the API key:",
+            validate=lambda x: len(x.strip()) > 0 or "Please enter an API key.",
+        ).ask()
+        if custom_api_key:
+            custom_api_key = custom_api_key.strip()
+
+    return "custom", base_url, custom_api_key
 
 
 def ask_openai_reasoning_effort() -> str:

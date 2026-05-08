@@ -52,4 +52,6 @@ DEFAULT_CONFIG = {
     "futu_opend_port": int(os.getenv("FUTU_OPEND_PORT", "11111")),
     # Ticker market mapping for Futu: "US" or "HK"
     "futu_market": os.getenv("FUTU_MARKET", "US"),
+    # Custom provider settings (used when llm_provider == "custom")
+    "custom_api_key": os.getenv("CUSTOM_API_KEY", ""),
 }

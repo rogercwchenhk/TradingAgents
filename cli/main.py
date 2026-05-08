@@ -554,7 +554,12 @@ def get_user_selections():
             "Step 6: LLM Provider", "Select your LLM provider"
         )
     )
-    selected_llm_provider, backend_url = select_llm_provider()
+    provider_result = select_llm_provider()
+    if len(provider_result) == 3:
+        selected_llm_provider, backend_url, custom_api_key = provider_result
+    else:
+        selected_llm_provider, backend_url = provider_result
+        custom_api_key = ""
 
     # Step 7: Thinking agents
     console.print(
@@ -609,6 +614,7 @@ def get_user_selections():
         "openai_reasoning_effort": reasoning_effort,
         "anthropic_effort": anthropic_effort,
         "output_language": output_language,
+        "custom_api_key": custom_api_key,
     }
 
 
@@ -944,6 +950,7 @@ def run_analysis(checkpoint: bool = False):
     config["anthropic_effort"] = selections.get("anthropic_effort")
     config["output_language"] = selections.get("output_language", "English")
     config["checkpoint_enabled"] = checkpoint
+    config["custom_api_key"] = selections.get("custom_api_key", "")
 
     # Create stats callback handler for tracking LLM/tool calls
     stats_handler = StatsCallbackHandler()

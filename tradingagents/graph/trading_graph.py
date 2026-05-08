@@ -150,6 +150,11 @@ class TradingAgentsGraph:
             if effort:
                 kwargs["effort"] = effort
 
+        if provider == "custom":
+            custom_api_key = self.config.get("custom_api_key")
+            if custom_api_key:
+                kwargs["custom_api_key"] = custom_api_key
+
         return kwargs
 
     def _create_tool_nodes(self) -> Dict[str, ToolNode]:

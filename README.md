@@ -30,6 +30,7 @@
 > This fork adds **[Futu OpenD](https://openapi.futunn.com/futu-api-doc/opend/opend.html)** as a data source vendor, enabling US and HK market data via Futu's local gateway.
 
 ## News
+- [2026-05] **Custom model support** added — use any OpenAI-compatible LLM provider or specify arbitrary model IDs for existing providers.
 - [2026-04] **TradingAgents v0.2.4** released with structured-output agents (Research Manager, Trader, Portfolio Manager), LangGraph checkpoint resume, persistent decision log, DeepSeek/Qwen/GLM/Azure provider support, Docker, and a Windows UTF-8 encoding fix. See [CHANGELOG.md](CHANGELOG.md) for the full list.
 - [2026-03] **TradingAgents v0.2.3** released with multi-language support, GPT-5.4 family models, unified model catalog, backtesting date fidelity, and proxy support.
 - [2026-03] **TradingAgents v0.2.2** released with GPT-5.4/Gemini 3.1/Claude 4.6 model coverage, five-tier rating scale, OpenAI Responses API, Anthropic effort control, and cross-platform stability.
@@ -147,6 +148,7 @@ export DEEPSEEK_API_KEY=...        # DeepSeek
 export DASHSCOPE_API_KEY=...       # Qwen (Alibaba DashScope)
 export ZHIPU_API_KEY=...           # GLM (Zhipu)
 export OPENROUTER_API_KEY=...      # OpenRouter
+export CUSTOM_API_KEY=...          # Custom OpenAI-Compatible provider
 export ALPHA_VANTAGE_API_KEY=...   # Alpha Vantage
 export FUTU_OPEND_HOST=127.0.0.1   # Futu OpenD host (default: 127.0.0.1)
 export FUTU_OPEND_PORT=11111       # Futu OpenD port (default: 11111)
@@ -189,7 +191,7 @@ An interface will appear showing results as they load, letting you track the age
 
 ### Implementation Details
 
-We built TradingAgents with LangGraph to ensure flexibility and modularity. The framework supports multiple LLM providers: OpenAI, Google, Anthropic, xAI, DeepSeek, Qwen (Alibaba DashScope), GLM (Zhipu), OpenRouter, Ollama for local models, and Azure OpenAI for enterprise.
+We built TradingAgents with LangGraph to ensure flexibility and modularity. The framework supports multiple LLM providers: OpenAI, Google, Anthropic, xAI, DeepSeek, Qwen (Alibaba DashScope), GLM (Zhipu), OpenRouter, Ollama for local models, Azure OpenAI for enterprise, and any custom OpenAI-compatible endpoint.
 
 ### Python Usage
 
@@ -213,7 +215,7 @@ from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.default_config import DEFAULT_CONFIG
 
 config = DEFAULT_CONFIG.copy()
-config["llm_provider"] = "openai"        # openai, google, anthropic, xai, deepseek, qwen, glm, openrouter, ollama, azure
+config["llm_provider"] = "openai"        # openai, google, anthropic, xai, deepseek, qwen, glm, openrouter, ollama, azure, custom
 config["deep_think_llm"] = "gpt-5.4"     # Model for complex reasoning
 config["quick_think_llm"] = "gpt-5.4-mini" # Model for quick tasks
 config["max_debate_rounds"] = 2
@@ -224,6 +226,45 @@ print(decision)
 ```
 
 See `tradingagents/default_config.py` for all configuration options.
+
+### Custom Model Support
+
+TradingAgents supports custom LLM models in two ways:
+
+#### 1. Custom Model ID for Existing Providers
+
+All built-in providers (OpenAI, Anthropic, Google, xAI, DeepSeek, Qwen, GLM, Ollama) now offer a **"Custom model ID"** option in the CLI model selection menu. This lets you specify any model name not listed in the default catalog — useful for fine-tuned models, new releases, or regional endpoints.
+
+In the CLI, scroll to the bottom of the model list and select `Custom model ID`, then type the model name.
+
+Programmatically:
+```python
+config = DEFAULT_CONFIG.copy()
+config["llm_provider"] = "openai"
+config["deep_think_llm"] = "ft:gpt-4.1-mini:my-org:custom-suffix"
+config["quick_think_llm"] = "ft:gpt-4.1-mini:my-org:custom-suffix"
+```
+
+#### 2. Custom OpenAI-Compatible Provider
+
+Use any LLM service that exposes an OpenAI-compatible API (e.g. vLLM, LiteLLM, LocalAI, text-generation-inference, or a corporate proxy).
+
+In the CLI, select **Custom (OpenAI-Compatible)** and enter your base URL and API key.
+
+Programmatically:
+```python
+config = DEFAULT_CONFIG.copy()
+config["llm_provider"] = "custom"
+config["backend_url"] = "http://localhost:8080/v1"     # Your OpenAI-compatible endpoint
+config["custom_api_key"] = "your-api-key"              # Or set CUSTOM_API_KEY env var
+config["deep_think_llm"] = "your-model-name"
+config["quick_think_llm"] = "your-model-name"
+```
+
+Environment variable:
+```bash
+export CUSTOM_API_KEY=your-api-key
+```
 
 ### Futu OpenD Data Vendor
 
